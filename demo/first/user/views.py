@@ -15,7 +15,7 @@ from rest_framework.decorators import api_view
 from django.contrib.auth import login
 from .serializers import (CitySerializer, CreateUserSerializer,
                           UserSerializer, LoginUserSerializer)
-from .models import User, PhoneOTP
+from .models import *
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 import requests
@@ -217,7 +217,7 @@ class Register(APIView):
             })
 
 
-class City(APIView):
+class CityService(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
