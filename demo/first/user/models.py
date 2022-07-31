@@ -67,6 +67,12 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
+    @classmethod
+    def create(cls,phone):
+        rec=cls(phone=phone)
+        rec.save()
+        return
+        
     def __str__(self):
         return self.phone
 

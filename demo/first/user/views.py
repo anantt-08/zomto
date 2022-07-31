@@ -25,6 +25,7 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.views import ObtainAuthToken
 
 import random
+import datetime
 
 
 def send_otp(phone):
@@ -64,10 +65,7 @@ class ValidatePhoneSendOTP(APIView):
             user = User.objects.filter(phone__iexact = phone)
             if user.exists() == False:
                 Temp_data = {'phone': phone}
-                serializer = CreateUserSerializer(data=Temp_data)
-                serializer.is_valid(raise_exception=True)
-                user = serializer.save()
-                user.save()
+                user = User.create(phone)
             
             otp = send_otp(phone)
             print(phone, otp)
@@ -101,13 +99,19 @@ class ValidatePhoneSendOTP(APIView):
                 })
         else:
             return Response({
-                'status': 'False', 'detail' : "I haven't received any phone number. Please do a POST request."
+                'status': 'False', 'detail' : "Phone number required. Please do a POST request."
             })
 
 
 class CustomAuthToken(ObtainAuthToken):
-    def getUserAuthToken(user):
+    def getUserAuthToken(self,user):
+        print("token : ")
         token, created = Token.objects.get_or_create(user=user)
+        if not created:
+                # update the created time of the token to keep it valid
+                token.created = datetime.datetime.utcnow()
+                token.save()
+        print("token : ",  token)
         if(token != None):
             return token.key
         return None
@@ -123,8 +127,8 @@ class ValidateOTP(APIView):
         otp_sent   = request.data.get('otp', False)
 
         if phone and otp_sent:
-            user = User.objects.filter(mobile = phone)
-            old = PhoneOTP.objects.filter(phone__iexact = phone)
+            user = User.objects.filter(phone = phone)
+            old = PhoneOTP.objects.filter(phone = phone)
             if old.exists():
                 old = old.first()
                 otp = old.otp
@@ -132,7 +136,7 @@ class ValidateOTP(APIView):
                     old.logged = True
                     old.save()
                     customAuthToken = CustomAuthToken();
-                    userToken = customAuthToken.getUserAuthToken(user)
+                    userToken = customAuthToken.getUserAuthToken(user[0])
                     return Response({
                         'status' : True, 
                         'detail' : 'OTP matched, kindly proceed!',

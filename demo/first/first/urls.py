@@ -28,5 +28,6 @@ urlpatterns = [
     re_path(r'^admin/', admin.site.urls),
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
     path('sendOtp', ValidatePhoneSendOTP.as_view(), name="send_otp"),
+    path('verifyOtp', ValidateOTP.as_view(), name="verify_otp"),
 ]
 
