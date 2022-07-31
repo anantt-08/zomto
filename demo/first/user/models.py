@@ -115,3 +115,57 @@ class PhoneOTP(models.Model):
         return str(self.phone) + ' is sent ' + str(self.otp)
 
 
+
+class City(models.Model):
+    name = models.CharField(max_length=100)
+    state= models.CharField(max_length=100)
+    user = models.ForeignKey(User,on_delete=models.CASCADE,null=True, blank=True)
+
+    class Meta():
+        db_table = "City"
+
+
+class Restaurant(models.Model):
+    city=models.ForeignKey(City,on_delete=models.CASCADE,null=True, blank=True)
+    name= models.CharField(max_length=100)
+    rating=models.CharField(max_length=30,null=True)
+    description=models.CharField(max_length=30,null=True)
+    landmark=models.CharField(max_length=30,null=True)
+    address=models.CharField(max_length=30,null=True)
+
+class Item(models.Model):
+    restaurant = models.ForeignKey(City,on_delete=models.CASCADE,null=True, blank=True)
+    name= models.CharField(max_length=100)
+    is_active = models.CharField(max_length=30,null=True)
+    is_avaliable = models.CharField(max_length=30,null=True)
+    price = models.CharField(max_length=30,null=True)
+
+
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
+    city = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
+    restaurant = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
+    items = models.ManyToManyField(OrderItem,blank=True, null=True)
+    ordered_date = models.DateTimeField()
+    ordered = models.BooleanField(default=False)
+    price= models.DecimalField(max_digits=10, decimal_places=2)
+    payment_type=models.CharField(max_length=30,null=False)
+    order_status=models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.phone
+
+class OrderItem(models.Model) :
+    user = models.ForeignKey(User,on_delete=models.CASCADE,null=True, blank=True)
+    ordered = models.BooleanField(default=False)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE,blank=True, null=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE,blank=True, null=True)
+    quantity = models.IntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.item.name}"
+
+class Cart(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE,blank=True, null=True)
+    user = models.ForeignKey(User,on_delete=models.CASCADE,null=True, blank=True)
+    quantity = models.IntegerField(default=1)
