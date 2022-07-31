@@ -59,7 +59,6 @@ class User(AbstractBaseUser):
     staff       = models.BooleanField(default=False)
     admin       = models.BooleanField(default=False)
     timestamp   = models.DateTimeField(auto_now_add=True)
-    city        = models.CharField(max_length=100,null=True)
 
 
     USERNAME_FIELD = 'phone'
@@ -72,7 +71,7 @@ class User(AbstractBaseUser):
         rec=cls(phone=phone)
         rec.save()
         return
-        
+
     def __str__(self):
         return self.phone
 
@@ -134,7 +133,7 @@ class Restaurant(models.Model):
     address=models.CharField(max_length=30,null=True)
 
 class Item(models.Model):
-    restaurant = models.ForeignKey(City,on_delete=models.CASCADE,null=True, blank=True)
+    restaurant = models.ForeignKey(Restaurant,on_delete=models.CASCADE,null=True, blank=True)
     name= models.CharField(max_length=100)
     is_active = models.CharField(max_length=30,null=True)
     is_avaliable = models.CharField(max_length=30,null=True)
@@ -143,9 +142,8 @@ class Item(models.Model):
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
-    city = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
-    restaurant = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
-    items = models.ManyToManyField(OrderItem,blank=True, null=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE,null=True, blank=True)
+    city=models.ForeignKey(City,on_delete=models.CASCADE,null=True, blank=True)
     ordered_date = models.DateTimeField()
     ordered = models.BooleanField(default=False)
     price= models.DecimalField(max_digits=10, decimal_places=2)

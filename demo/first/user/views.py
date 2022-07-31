@@ -13,13 +13,14 @@ from rest_framework import permissions, generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.contrib.auth import login
-from .serializers import (CreateUserSerializer,
+from .serializers import (CitySerializer, CreateUserSerializer,
                           UserSerializer, LoginUserSerializer)
 from .models import User, PhoneOTP
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 import requests
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
 
 from rest_framework.views import APIView
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -74,9 +75,10 @@ class ValidatePhoneSendOTP(APIView):
                 count = 0
                 old = PhoneOTP.objects.filter(phone__iexact = phone)
                 if old.exists():
-                    count = old.first().count
-                    old.first().count = count + 1
-                    old.first().save()
+                    oldOtp = old.first()
+                    oldOtp.count = oldOtp.count + 1
+                    oldOtp.otp = otp
+                    oldOtp.save()
                 
                 else:
                     count = count + 1
@@ -213,6 +215,15 @@ class Register(APIView):
                 'status' : 'False',
                 'detail' : 'Either phone or password was not recieved in Post request'
             })
+
+
+class City(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cityList = City.objects.all()
+        serializedData = CitySerializer(data = cityList)
+        return Response(serializedData.data)
 
 
         

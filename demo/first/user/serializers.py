@@ -59,3 +59,12 @@ class LoginUserSerializer(serializers.Serializer):
         return attrs
 
 
+class CitySerializer(serializers.ModelSerializer):
+
+   
+    class Meta:
+        model = User
+        fields = '__all__'
+
+
+
