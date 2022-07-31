@@ -18,13 +18,15 @@ from django.urls import path, include, re_path
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.authtoken.views import obtain_auth_token
 
 from user.views import ValidatePhoneSendOTP
-from .views import *
+from user.views import *
 
 urlpatterns = [
 
     re_path(r'^admin/', admin.site.urls),
-    re_path(r'^validatephone/', ValidatePhoneSendOTP.asview()),
+    path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
+    path('sendOtp', ValidatePhoneSendOTP.as_view(), name="send_otp"),
 ]
 

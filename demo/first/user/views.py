@@ -8,6 +8,7 @@
 #from rest_framework.permissions import IsAuthenticated,AllowAny
   
 
+from hashlib import new
 from rest_framework import permissions, generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -18,8 +19,12 @@ from .models import User, PhoneOTP
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 import requests
+from rest_framework.authtoken.models import Token
 
 from rest_framework.views import APIView
+from rest_framework.authtoken.views import ObtainAuthToken
+
+import random
 
 
 def send_otp(phone):
@@ -28,22 +33,7 @@ def send_otp(phone):
     return otp
 
 
-
-def phone_validator(phone_number):
-    """
-    Returns true if phone number is correct else false
-    """
-    regix = r'^\+?1?\d{10}$'
-    com = re.compile(regix)
-    find = len(com.findall(phone_number))
-    if find == 1:
-        return True
-    else:
-        return False
-
-
-
-class LoginAPI(KnoxLoginView):
+class LoginAPI():
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, format=None):
@@ -72,42 +62,40 @@ class ValidatePhoneSendOTP(APIView):
         if phone_number:
             phone = str(phone_number)
             user = User.objects.filter(phone__iexact = phone)
-            if user.exists():
-                return Response({'status': False, 'detail': 'Phone Number already exists'})
-                 # logic to send the otp and store the phone number and that otp in table. 
-            else:
-                otp = send_otp(phone)
-                print(phone, otp)
-                if otp:
-                    otp = str(otp)
-                    count = 0
-                    old = PhoneOTP.objects.filter(phone__iexact = phone)
-                    if old.exists():
-                        count = old.first().count
-                        old.first().count = count + 1
-                        old.first().save()
-                    
-                    else:
-                        count = count + 1
-               
-                        PhoneOTP.objects.create(
-                             phone =  phone, 
-                             otp =   otp,
-                             count = count
-        
-                             )
-                    if count > 7:
-                        return Response({
-                            'status' : False, 
-                             'detail' : 'Maximum otp limits reached. Kindly support our customer care or try with different number'
-                        })
-                    
-                    
+            if user.exists() == False:
+                Temp_data = {'phone': phone}
+                serializer = CreateUserSerializer(data=Temp_data)
+                serializer.is_valid(raise_exception=True)
+                user = serializer.save()
+                user.save()
+            
+            otp = send_otp(phone)
+            print(phone, otp)
+            if otp:
+                otp = str(otp)
+                count = 0
+                old = PhoneOTP.objects.filter(phone__iexact = phone)
+                if old.exists():
+                    count = old.first().count
+                    old.first().count = count + 1
+                    old.first().save()
+                
                 else:
+                    count = count + 1
+            
+                    PhoneOTP.objects.create(
+                            phone =  phone, 
+                            otp =   otp,
+                            count = count
+    
+                            )
+                if count > 7:
                     return Response({
-                                'status': 'False', 'detail' : "OTP sending error. Please try after some time."
-                            })
-
+                        'status' : False, 
+                            'detail' : 'Maximum otp limits reached. Kindly support our customer care or try with different number'
+                    })
+                    
+              
                 return Response({
                     'status': True, 'detail': 'Otp has been sent successfully.'
                 })
@@ -116,6 +104,13 @@ class ValidatePhoneSendOTP(APIView):
                 'status': 'False', 'detail' : "I haven't received any phone number. Please do a POST request."
             })
 
+
+class CustomAuthToken(ObtainAuthToken):
+    def getUserAuthToken(user):
+        token, created = Token.objects.get_or_create(user=user)
+        if(token != None):
+            return token.key
+        return None
 
 class ValidateOTP(APIView):
     '''
@@ -128,6 +123,7 @@ class ValidateOTP(APIView):
         otp_sent   = request.data.get('otp', False)
 
         if phone and otp_sent:
+            user = User.objects.filter(mobile = phone)
             old = PhoneOTP.objects.filter(phone__iexact = phone)
             if old.exists():
                 old = old.first()
@@ -135,10 +131,12 @@ class ValidateOTP(APIView):
                 if str(otp) == str(otp_sent):
                     old.logged = True
                     old.save()
-
+                    customAuthToken = CustomAuthToken();
+                    userToken = customAuthToken.getUserAuthToken(user)
                     return Response({
                         'status' : True, 
-                        'detail' : 'OTP matched, kindly proceed to save password'
+                        'detail' : 'OTP matched, kindly proceed!',
+                        'token' : userToken
                     })
                 else:
                     return Response({
