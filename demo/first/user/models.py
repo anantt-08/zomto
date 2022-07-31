@@ -49,6 +49,14 @@ class UserManager(BaseUserManager):
         return user
 
 
+class City(models.Model):
+    name = models.CharField(max_length=100)
+    state= models.CharField(max_length=100)
+
+    class Meta():
+        db_table = "City"
+
+
 class User(AbstractBaseUser):
     password = None
     phone_regex = RegexValidator( regex   =r'^\+?1?\d{9,14}$', message ="Phone number must be entered in the format: '+999999999'. Up to 14 digits allowed.")
@@ -59,6 +67,7 @@ class User(AbstractBaseUser):
     staff       = models.BooleanField(default=False)
     admin       = models.BooleanField(default=False)
     timestamp   = models.DateTimeField(auto_now_add=True)
+    city = models.ForeignKey(City,on_delete=models.CASCADE,null=True, blank=True)
 
 
     USERNAME_FIELD = 'phone'
@@ -113,15 +122,6 @@ class PhoneOTP(models.Model):
     def __str__(self):
         return str(self.phone) + ' is sent ' + str(self.otp)
 
-
-
-class City(models.Model):
-    name = models.CharField(max_length=100)
-    state= models.CharField(max_length=100)
-    user = models.ForeignKey(User,on_delete=models.CASCADE,null=True, blank=True)
-
-    class Meta():
-        db_table = "City"
 
 
 class Restaurant(models.Model):

@@ -9,12 +9,13 @@
   
 
 from hashlib import new
+from xmlrpc.client import ResponseError
 from rest_framework import permissions, generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.contrib.auth import login
-from .serializers import (CitySerializer, CreateUserSerializer,
-                          UserSerializer, LoginUserSerializer)
+from .serializers import (CartSerializer, CitySerializer, CreateUserSerializer,
+                          UserSerializer)
 from .models import *
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
@@ -33,25 +34,6 @@ def send_otp(phone):
     if phone:
         otp = random.randint(999, 9999)
     return otp
-
-
-class LoginAPI():
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request, format=None):
-        serializer = LoginUserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        if user.last_login is None :
-            user.first_login = True
-            user.save()
-            
-        elif user.first_login:
-            user.first_login = False
-            user.save()
-            
-        login(request, user)
-        return super().post(request, format=None)
 
 
 class ValidatePhoneSendOTP(APIView):
@@ -222,8 +204,45 @@ class CityService(APIView):
 
     def get(self, request):
         cityList = City.objects.all()
-        serializedData = CitySerializer(data = cityList)
+        serializedData = CitySerializer(cityList, many = True)
         return Response(serializedData.data)
+
+
+class UserCityUpdate(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request,  *args, **kwargs):
+        city = request.data.get('city', False)
+        cityObject = City.objects.filter(id = city)
+        if( not cityObject):
+            return Response("City not found",status.HTTP_400_BAD_REQUEST)
+        cityObject = cityObject.first()
+        user = request.user
+        user.city = cityObject
+        user.save()
+        return Response(UserSerializer(user).data)
+
+
+class CartService(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cartList = Cart.objects.all()
+        return Response(CartSerializer(cartList, many = True).data)
+
+    def post(self, request,  *args, **kwargs):
+        cartId = request.data.get('id', False)
+        #if cartItem is not present, then insert it, else update it
+        cartItem = Cart.objects.get(id = cartId)
+        data = CartSerializer(instance=cartItem, data=request.data)
+    
+        if data.is_valid():
+            data.save()
+            return Response(data.data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
 
 
         

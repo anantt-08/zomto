@@ -30,5 +30,7 @@ urlpatterns = [
     path('sendOtp', ValidatePhoneSendOTP.as_view(), name="send_otp"),
     path('verifyOtp', ValidateOTP.as_view(), name="verify_otp"),
     path('city', CityService.as_view(), name="city"),
+    path('update-city', UserCityUpdate.as_view(), name="update-city"),
+    path('cart', CartService.as_view(), name="cart"),
 ]
 
